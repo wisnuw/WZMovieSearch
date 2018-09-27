@@ -65,53 +65,58 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         if isShowingKeywords {
+            
             var cell = tableView.dequeueReusableCell(withIdentifier: "keywordCell")
             if cell == nil {
                 cell = UITableViewCell(style: .default, reuseIdentifier: "keywordCell")
             }
             
-            cell?.textLabel?.text = keywords?[indexPath.row]
+            if !(keywords?.isEmpty)! {
+                cell?.textLabel?.text = keywords?[indexPath.row]
+            }
+            
             return cell!
         }
         else {
-            let movie = movies[indexPath.row]
-            let cellIdentifier = "movieCell"
-            let cell = tableView.dequeueReusableCell(withIdentifier: cellIdentifier) as! MovieTableViewCell
+            let cell = tableView.dequeueReusableCell(withIdentifier: "movieCell") as! MovieTableViewCell
             
-            //load image thumbnail - will be cache
-            if let thumbnail = movie.thumbnailUrl, let url = URL(string: "http://image.tmdb.org/t/p/w92\(thumbnail)") {
-                let config = URLSessionConfiguration.default
-                config.timeoutIntervalForResource = 60 // timeout, in seconds
+            if !movies.isEmpty {
+                let movie = movies[indexPath.row]
+                
+                //load image thumbnail - will be cache
+                if let thumbnail = movie.thumbnailUrl, let url = URL(string: "http://image.tmdb.org/t/p/w92\(thumbnail)") {
+                    let config = URLSessionConfiguration.default
+                    config.timeoutIntervalForResource = 60 // timeout, in seconds
 
-                let session = URLSession(configuration: URLSessionConfiguration.default)
-                session.dataTask(with: url) { data, response, error in
-                    if let err = error {
-                        print(err.localizedDescription)
-                    }
-                    else {
-                        DispatchQueue.main.async(execute: { () -> Void in
-                            // Before we assign the image, check whether the current cell is visible
-                            if let updateCell = tableView.cellForRow(at: indexPath) as? MovieTableViewCell {
-                                let img:UIImage! = UIImage(data: data!)
-                                updateCell.posterIV.image = img
-                                self.cache.setObject(img, forKey: (indexPath as NSIndexPath).row as AnyObject)
-                            }
-                        })
-                    }
-                    
-                }.resume()
+                    let session = URLSession(configuration: URLSessionConfiguration.default)
+                    session.dataTask(with: url) { data, response, error in
+                        if let err = error {
+                            print(err.localizedDescription)
+                        }
+                        else {
+                            DispatchQueue.main.async(execute: { () -> Void in
+                                // Before we assign the image, check whether the current cell is visible
+                                if let updateCell = tableView.cellForRow(at: indexPath) as? MovieTableViewCell {
+                                    let img:UIImage! = UIImage(data: data!)
+                                    updateCell.posterIV.image = img
+                                    self.cache.setObject(img, forKey: (indexPath as NSIndexPath).row as AnyObject)
+                                }
+                            })
+                        }
+                        
+                    }.resume()
+                }
+                
+                cell.posterIV.image = #imageLiteral(resourceName: "ic_play")
+                cell.titleLabel.text = movie.name!
+                cell.overviewLabel.text = movie.overview
+                
+                if let releaseDate = movie.releaseDate {
+                    let dateFormatter = DateFormatter()
+                    dateFormatter.dateFormat = "dd MMM yyyy"
+                    cell.releaseDateLabel.text = dateFormatter.string(from: releaseDate)
+                }
             }
-            
-            cell.posterIV.image = #imageLiteral(resourceName: "ic_play")
-            cell.titleLabel.text = movie.name!
-            cell.overviewLabel.text = movie.overview
-            
-            if let releaseDate = movie.releaseDate {
-                let dateFormatter = DateFormatter()
-                dateFormatter.dateFormat = "dd MMM yyyy"
-                cell.releaseDateLabel.text = dateFormatter.string(from: releaseDate)
-            }
-            
             return cell
         }
     }
@@ -135,7 +140,7 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         let contentYoffset = scrollView.contentOffset.y
         let distanceFromBottom = scrollView.contentSize.height - contentYoffset
         if distanceFromBottom < height {
-            if !isLoading && !thatsAll {
+            if !isLoading && !thatsAll && !isShowingKeywords {
                 pageCount += 1
                 getMovies(keyword: self.keyword)
             }
@@ -156,13 +161,8 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         return true
     }
     
-    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
-        // show previous successful search keywords list
-        showSuccessfulKeywords()
-    }
-    
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
-        isShowingKeywords = true
+        isShowingKeywords = false
         thatsAll = false
         pageCount = 1
         self.movies = []
@@ -170,6 +170,8 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     }
     
     private func getMovies(keyword:String) {
+        searchBar.resignFirstResponder()
+        
         let api = APIRequest()
         let _ = api.getMovies(query: keyword, page: pageCount) { [unowned self] (movies,error) in
             self.keyword = keyword
@@ -184,7 +186,12 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
                 self.tableView.reloadData()
             }
             
-        
+            if self.movies.count == 0 {
+                self.showAlert(msg: "Not Found")
+            }
+            else {
+                self.add(newKeyword: self.keyword)
+            }
             
             if movies?.count == 0 {
                 self.thatsAll = true
@@ -217,7 +224,8 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     }
     
     func fetchAllKeyword() -> [String]? {
-        return UserDefaults.standard.value(forKey: "success_keywords") as? [String]
+        let arr = UserDefaults.standard.value(forKey: "success_keywords") as? [String]
+        return arr?.reversed()
     }
     
     func add(newKeyword:String) {
@@ -235,53 +243,16 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         
         if found == nil {
             allKeywords?.append(newKeyword)
-            UserDefaults.standard.set(allKeywords, forKey: "success_keywords")
-        }
-    }
-}
-
-
-class APIRequest {
-    func getMovies(query:String, page:Int, completion: @escaping ([Movie]?, Error?) -> ()) {
-        let apiKey = "2696829a81b1b5827d515ff121700838"
-        let request = URLRequest(url: URL(string: "http://api.themoviedb.org/3/search/movie?query=\(query)&page=\(page)&api_key=\(apiKey)")!)
-        
-        let dataTask = URLSession.shared.dataTask(with: request, completionHandler: { (data, url, error) in
             
-            if let err = error {
-                completion(nil,err)
-            }
-            else {
-                var result : [Movie] = []
-                if let json = self.parseJSON(from: data!) as? [String:Any],  json["errors"] == nil {
-                    
-                    let jsonObjectArray = json["results"] as! Array<Any>
-                    
-                    for jsonObject in jsonObjectArray {
-                        if let movieRaw = jsonObject as? [String:Any] {
-                            let dateFormatter = DateFormatter()
-                            dateFormatter.dateFormat = "yyyy-MM-dd"
-                            let releaseDate = dateFormatter.date(from: movieRaw["release_date"] as! String)
-                            
-                            let movieObj = Movie(id: (movieRaw["id"] as! NSNumber).stringValue, name: movieRaw["title"] as? String, releaseDate: releaseDate, overview: movieRaw["overview"] as? String, thumbnailUrl: movieRaw["poster_path"] as? String)
-                            result.append(movieObj)
-                        }
-                    }
+            if (allKeywords?.count)!>10 {
+                for i in 0...(allKeywords?.count)!-2 {
+                    allKeywords![i] = allKeywords![i+1]
                 }
                 
-                completion(result,nil)
+                let _ = allKeywords?.removeLast()
             }
-        })
-        
-        dataTask.resume()
-    }
-    
-    func parseJSON(from data: Data) -> Any? {
-        do {
-            let json = try JSONSerialization.jsonObject(with: data, options: .mutableContainers)
-            return json
-        } catch {
-            return nil
+            
+            UserDefaults.standard.set(allKeywords, forKey: "success_keywords")
         }
     }
 }

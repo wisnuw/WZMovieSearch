@@ -15,6 +15,7 @@
 		0B24BF60215B8EA700C67B90 /* WZMovieSearchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B24BF5F215B8EA700C67B90 /* WZMovieSearchTests.swift */; };
 		0B24BF6B215B969400C67B90 /* SwiftyJSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B24BF6A215B969400C67B90 /* SwiftyJSON.swift */; };
 		0B24BF6D215C061300C67B90 /* MovieTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B24BF6C215C061300C67B90 /* MovieTableViewCell.swift */; };
+		0B24BF6F215D009600C67B90 /* APIRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B24BF6E215D009600C67B90 /* APIRequest.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -40,6 +41,7 @@
 		0B24BF61215B8EA700C67B90 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		0B24BF6A215B969400C67B90 /* SwiftyJSON.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SwiftyJSON.swift; sourceTree = "<group>"; };
 		0B24BF6C215C061300C67B90 /* MovieTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovieTableViewCell.swift; sourceTree = "<group>"; };
+		0B24BF6E215D009600C67B90 /* APIRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIRequest.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -89,6 +91,7 @@
 				0B24BF53215B8EA700C67B90 /* LaunchScreen.storyboard */,
 				0B24BF56215B8EA700C67B90 /* Info.plist */,
 				0B24BF6C215C061300C67B90 /* MovieTableViewCell.swift */,
+				0B24BF6E215D009600C67B90 /* APIRequest.swift */,
 			);
 			path = WZMovieSearch;
 			sourceTree = "<group>";
@@ -206,6 +209,7 @@
 				0B24BF6B215B969400C67B90 /* SwiftyJSON.swift in Sources */,
 				0B24BF4D215B8EA600C67B90 /* ViewController.swift in Sources */,
 				0B24BF6D215C061300C67B90 /* MovieTableViewCell.swift in Sources */,
+				0B24BF6F215D009600C67B90 /* APIRequest.swift in Sources */,
 				0B24BF4B215B8EA600C67B90 /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
